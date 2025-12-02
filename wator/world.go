@@ -58,7 +58,7 @@ func (w *World) wrap(i int) int {
 }
 
 /**
-	@brief Returns the indices of the 4 neighboring cells
+	@   brief Returns the indices of the 4 neighboring cells
 */
 func (w *World) Neighbors(row, col int) [][2]int {
     return [][2]int{

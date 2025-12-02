@@ -3,6 +3,8 @@ package main
 import (
     "fmt"
     "math/rand"
+    "os"
+    "sync"
     "time"
 )
 
@@ -35,6 +37,7 @@ func newEmptyWorldLike(w *World) *World {
 //   @param "cfg" The simulation configuration
 //  @param "w" The initial world
 func RunSimulation(cfg Config, w *World) {
+    start := time.Now()
     rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 
     chronon := 0
@@ -42,29 +45,67 @@ func RunSimulation(cfg Config, w *World) {
     for {
         chronon++
 
-        //  Step the world by one chronon
+        // advance one chronon (potentially using multiple threads)
         w = StepWorld(w, cfg, rnd)
 
-        //  Draw every cfg.DrawEvery chronons
+        // draw occasionally (only with small grids / Threads=1 ideally)
         if cfg.DrawEvery > 0 && chronon%cfg.DrawEvery == 0 {
             drawWorld(w, chronon)
         }
 
-        // extinction stopping conditions
-        if countEntities(w, Fish) == 0 {
-            fmt.Println("All fish extinct. Simulation ending.")
-            break
-        }
-        if countEntities(w, Shark) == 0 {
-            fmt.Println("All sharks extinct. Simulation ending.")
+        // stop if either species is extinct
+        if countEntities(w, Fish) == 0 || countEntities(w, Shark) == 0 {
             break
         }
 
+        // optional chronon limit
         if cfg.Chronons > 0 && chronon >= cfg.Chronons {
-            fmt.Println("Reached chronon limit.")
             break
         }
     }
+
+    elapsed := time.Since(start)
+    fmt.Printf("Threads: %d  Time: %v\n", cfg.Threads, elapsed)
+
+    // If a benchmark file was provided, append a CSV line
+    writeBenchmarkLine(cfg, elapsed)
+}
+
+//  @brief Writes one line of benchmark CSV if BenchFile is set
+func writeBenchmarkLine(cfg Config, elapsed time.Duration) {
+    if cfg.BenchFile == "" {
+        return
+    }
+
+    f, err := os.OpenFile(cfg.BenchFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+    if err != nil {
+        fmt.Printf("Could not open benchmark file %s: %v\n", cfg.BenchFile, err)
+        return
+    }
+    defer f.Close()
+
+    // If file is empty, write a header row
+    info, err := f.Stat()
+    if err == nil && info.Size() == 0 {
+        fmt.Fprintln(f, "Threads,GridSize,NumFish,NumShark,FishBreed,SharkBreed,Starve,Chronons,TimeMillis")
+    }
+
+    millis := elapsed.Milliseconds()
+
+    // One CSV row per run
+    fmt.Fprintf(
+        f,
+        "%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+        cfg.Threads,
+        cfg.GridSize,
+        cfg.NumFish,
+        cfg.NumShark,
+        cfg.FishBreed,
+        cfg.SharkBreed,
+        cfg.Starve,
+        cfg.Chronons,
+        millis,
+    )
 }
 
 //  @brief Prints the current world grid to the terminal
@@ -76,7 +117,7 @@ func drawWorld(w *World, chronon int) {
             cell := w.Cells[row][col]
             switch cell.Entity {
             case Empty:
-                fmt.Print(".")
+                fmt.Print("~")
             case Fish:
                 fmt.Print("F")
             case Shark:
@@ -103,158 +144,226 @@ func countEntities(w *World, e Entity) int {
     return count
 }
 
-//  @brief Advances the world by one chronon
+//  @brief Advances the world by one chronon (multi-threaded using goroutines)
 func StepWorld(w *World, cfg Config, rnd *rand.Rand) *World {
     next := newEmptyWorldLike(w)
 
-    for row := 0; row < w.Size; row++ {
-        for col := 0; col < w.Size; col++ {
-
-            // prevent double-processing
-            if next.Cells[row][col].Entity != Empty {
-                continue
-            }
-
-            cell := w.Cells[row][col]
-
-            switch cell.Entity {
-            case Fish:
-                stepFish(w, next, row, col, cfg, rnd)
-
-            case Shark:
-                stepShark(w, next, row, col, cfg, rnd)
-
-            case Empty:
-            }
-        }
+    threads := cfg.Threads
+    if threads < 1 {
+        threads = 1
     }
+    if threads > w.Size {
+        // no point having more threads than rows
+        threads = w.Size
+    }
+
+    rowsPerThread := w.Size / threads
+    remainder := w.Size % threads
+
+    var wg sync.WaitGroup
+    var mu sync.Mutex // protects writes to "next"
+
+    startRow := 0
+    for t := 0; t < threads; t++ {
+        extra := 0
+        if t < remainder {
+            extra = 1
+        }
+        endRow := startRow + rowsPerThread + extra
+
+        wg.Add(1)
+
+        go func(start, end int) {
+            defer wg.Done()
+
+            // per-goroutine RNG
+            localRnd := rand.New(rand.NewSource(time.Now().UnixNano() + int64(start)))
+
+            for row := start; row < end; row++ {
+                for col := 0; col < w.Size; col++ {
+
+                    cell := w.Cells[row][col]
+                    if cell.Entity == Empty {
+                        continue
+                    }
+
+                    switch cell.Entity {
+                    case Fish:
+                        stepFish(w, next, row, col, cfg, localRnd, &mu)
+                    case Shark:
+                        stepShark(w, next, row, col, cfg, localRnd, &mu)
+                    }
+                }
+            }
+
+        }(startRow, endRow)
+
+        startRow = endRow
+    }
+
+    wg.Wait()
 
     return next
 }
 
 //  @brief Handles movement and reproduction for a single fish at (row, column)
-func stepFish(current *World, next *World, row, col int, cfg Config, rnd *rand.Rand) {
+func stepFish(current *World, next *World, row, col int, cfg Config, rnd *rand.Rand, mu *sync.Mutex) {
     cell := current.Cells[row][col]
     neighbors := current.Neighbors(row, col)
+
     emptySpots := make([][2]int, 0)
 
+    // Look for empty neighbors in CURRENT world (not next)
     for _, n := range neighbors {
         nr, nc := n[0], n[1]
-
-        if current.Cells[nr][nc].Entity == Empty && next.Cells[nr][nc].Entity == Empty {
+        if current.Cells[nr][nc].Entity == Empty {
             emptySpots = append(emptySpots, [2]int{nr, nc})
         }
     }
 
+    // No movement
     if len(emptySpots) == 0 {
+        mu.Lock()
         next.Cells[row][col] = Cell{
             Entity:     Fish,
             BreedTimer: cell.BreedTimer + 1,
         }
+        mu.Unlock()
         return
     }
 
+    // Pick random move
     destination := emptySpots[rnd.Intn(len(emptySpots))]
     nr, nc := destination[0], destination[1]
 
+    // Reproduction happens only ON MOVE
     if cell.BreedTimer+1 >= cfg.FishBreed {
+        mu.Lock()
+        // Leave baby at original position
         next.Cells[row][col] = Cell{
             Entity:     Fish,
             BreedTimer: 0,
         }
+        // Parent moves
         next.Cells[nr][nc] = Cell{
             Entity:     Fish,
             BreedTimer: 0,
         }
+        mu.Unlock()
         return
     }
 
+    // Normal movement
+    mu.Lock()
     next.Cells[nr][nc] = Cell{
         Entity:     Fish,
         BreedTimer: cell.BreedTimer + 1,
     }
+    mu.Unlock()
 }
 
 //  @brief Handles movement, eating, reproduction and starvation for a shark at (row, column).
-func stepShark(current *World, next *World, row, col int, cfg Config, rnd *rand.Rand) {
+func stepShark(current *World, next *World, row, col int, cfg Config, rnd *rand.Rand, mu *sync.Mutex) {
     cell := current.Cells[row][col]
 
+    // Shark loses 1 energy each turn
     newEnergy := cell.Energy - 1
     if newEnergy <= 0 {
-        return
+        return // shark dies
     }
 
     neighbors := current.Neighbors(row, col)
 
-    fishTarget := make([][2]int, 0)
+    // 1. LOOK FOR FISH TO EAT
+    fishTargets := make([][2]int, 0)
     for _, n := range neighbors {
         nr, nc := n[0], n[1]
-        if current.Cells[nr][nc].Entity == Fish && next.Cells[nr][nc].Entity == Empty {
-            fishTarget = append(fishTarget, [2]int{nr, nc})
+        if current.Cells[nr][nc].Entity == Fish {
+            fishTargets = append(fishTargets, [2]int{nr, nc})
         }
     }
 
-    if len(fishTarget) > 0 {
-        destination := fishTarget[rnd.Intn(len(fishTarget))]
+    if len(fishTargets) > 0 {
+        destination := fishTargets[rnd.Intn(len(fishTargets))]
         nr, nc := destination[0], destination[1]
 
+        // Eating gives FULL energy
+        gainedEnergy := cfg.Starve
+
+        mu.Lock()
+        defer mu.Unlock()
+
+        // Reproduction?
         if cell.BreedTimer+1 >= cfg.SharkBreed {
+            // Leave baby behind with HALF energy
             next.Cells[row][col] = Cell{
                 Entity:     Shark,
                 BreedTimer: 0,
-                Energy:     cfg.Starve,
+                Energy:     gainedEnergy / 2,
             }
+            // Parent moves to fish
             next.Cells[nr][nc] = Cell{
                 Entity:     Shark,
                 BreedTimer: 0,
-                Energy:     cfg.Starve,
+                Energy:     gainedEnergy,
             }
-        } else {
-            next.Cells[nr][nc] = Cell{
-                Entity:     Shark,
-                BreedTimer: cell.BreedTimer + 1,
-                Energy:     cfg.Starve,
-            }
+            return
+        }
+
+        // Normal move & eat
+        next.Cells[nr][nc] = Cell{
+            Entity:     Shark,
+            BreedTimer: cell.BreedTimer + 1,
+            Energy:     gainedEnergy,
         }
         return
     }
 
-    emptyTarget := make([][2]int, 0)
+    // 2. NO FISH — MOVE LIKE FISH
+    emptyTargets := make([][2]int, 0)
     for _, n := range neighbors {
         nr, nc := n[0], n[1]
-        if current.Cells[nr][nc].Entity == Empty && next.Cells[nr][nc].Entity == Empty {
-            emptyTarget = append(emptyTarget, [2]int{nr, nc})
+        if current.Cells[nr][nc].Entity == Empty {
+            emptyTargets = append(emptyTargets, [2]int{nr, nc})
         }
     }
 
-    if len(emptyTarget) > 0 {
-        destination := emptyTarget[rnd.Intn(len(emptyTarget))]
+    if len(emptyTargets) > 0 {
+        destination := emptyTargets[rnd.Intn(len(emptyTargets))]
         nr, nc := destination[0], destination[1]
 
+        mu.Lock()
+        defer mu.Unlock()
+
+        // Reproduce?
         if cell.BreedTimer+1 >= cfg.SharkBreed {
             next.Cells[row][col] = Cell{
                 Entity:     Shark,
                 BreedTimer: 0,
-                Energy:     cfg.Starve,
+                Energy:     newEnergy / 2,
             }
             next.Cells[nr][nc] = Cell{
                 Entity:     Shark,
                 BreedTimer: 0,
                 Energy:     newEnergy,
             }
-        } else {
-            next.Cells[nr][nc] = Cell{
-                Entity:     Shark,
-                BreedTimer: cell.BreedTimer + 1,
-                Energy:     newEnergy,
-            }
+            return
+        }
+
+        next.Cells[nr][nc] = Cell{
+            Entity:     Shark,
+            BreedTimer: cell.BreedTimer + 1,
+            Energy:     newEnergy,
         }
         return
     }
 
+    // 3. Can't move
+    mu.Lock()
     next.Cells[row][col] = Cell{
         Entity:     Shark,
         BreedTimer: cell.BreedTimer + 1,
         Energy:     newEnergy,
     }
+    mu.Unlock()
 }

@@ -1,0 +1,90 @@
+\hypertarget{simulation_8go}{}\doxysection{simulation.\+go File Reference}
+\label{simulation_8go}\index{simulation.go@{simulation.go}}
+
+
+Contains the main simulation loop for the Wa-\/\+Tor world This module is responsible for\+: Iterating over chronons/time steps Updating fish and shark positions and their state Applying reproduction and starvation rules Drawing the world.  
+
+
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} \mbox{\hyperlink{simulation_8go_a8e63300fef1bdb73e0f5d36c9d8611a1}{Run\+Simulation}} (cfg Config, w $\ast$World)
+\item 
+\mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} \mbox{\hyperlink{simulation_8go_a7ced1b2eac536b2a4fec8bf7a3912f16}{draw\+World}} (w $\ast$World, chronon int)
+\item 
+\mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} \mbox{\hyperlink{simulation_8go_a6d2fbc920ac37417cdb46676548b820a}{count\+Entities}} (w $\ast$World, e Entity) int
+\item 
+\mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} \mbox{\hyperlink{simulation_8go_a6e2efff14b30ac2e13fdf9315b6f302f}{Step\+World}} (w $\ast$World, cfg Config, rnd $\ast$rand.\+Rand) $\ast$World
+\item 
+\mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} \mbox{\hyperlink{simulation_8go_a44fd5ce7cea9ac861f12fb15b21f80a3}{step\+Fish}} (current $\ast$World, next $\ast$World, row, col int, cfg Config, rnd $\ast$rand.\+Rand)
+\item 
+\mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} \mbox{\hyperlink{simulation_8go_a865799a55f8f7af7f57de507ea7c4b34}{step\+Shark}} (current $\ast$World, next $\ast$World, row, col int, cfg Config, rnd $\ast$rand.\+Rand)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Contains the main simulation loop for the Wa-\/\+Tor world This module is responsible for\+: Iterating over chronons/time steps Updating fish and shark positions and their state Applying reproduction and starvation rules Drawing the world. 
+
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{simulation_8go_a6d2fbc920ac37417cdb46676548b820a}\label{simulation_8go_a6d2fbc920ac37417cdb46676548b820a}} 
+\index{simulation.go@{simulation.go}!countEntities@{countEntities}}
+\index{countEntities@{countEntities}!simulation.go@{simulation.go}}
+\doxysubsubsection{\texorpdfstring{countEntities()}{countEntities()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} count\+Entities (\begin{DoxyParamCaption}\item[{w $\ast$}]{World,  }\item[{e}]{Entity }\end{DoxyParamCaption})}
+
+
+
+Definition at line 94 of file simulation.\+go.
+
+\mbox{\Hypertarget{simulation_8go_a7ced1b2eac536b2a4fec8bf7a3912f16}\label{simulation_8go_a7ced1b2eac536b2a4fec8bf7a3912f16}} 
+\index{simulation.go@{simulation.go}!drawWorld@{drawWorld}}
+\index{drawWorld@{drawWorld}!simulation.go@{simulation.go}}
+\doxysubsubsection{\texorpdfstring{drawWorld()}{drawWorld()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} draw\+World (\begin{DoxyParamCaption}\item[{w $\ast$}]{World,  }\item[{chronon int}]{ }\end{DoxyParamCaption})}
+
+
+
+Definition at line 71 of file simulation.\+go.
+
+\mbox{\Hypertarget{simulation_8go_a8e63300fef1bdb73e0f5d36c9d8611a1}\label{simulation_8go_a8e63300fef1bdb73e0f5d36c9d8611a1}} 
+\index{simulation.go@{simulation.go}!RunSimulation@{RunSimulation}}
+\index{RunSimulation@{RunSimulation}!simulation.go@{simulation.go}}
+\doxysubsubsection{\texorpdfstring{RunSimulation()}{RunSimulation()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} Run\+Simulation (\begin{DoxyParamCaption}\item[{cfg}]{Config,  }\item[{w $\ast$}]{World }\end{DoxyParamCaption})}
+
+
+
+Definition at line 37 of file simulation.\+go.
+
+\mbox{\Hypertarget{simulation_8go_a44fd5ce7cea9ac861f12fb15b21f80a3}\label{simulation_8go_a44fd5ce7cea9ac861f12fb15b21f80a3}} 
+\index{simulation.go@{simulation.go}!stepFish@{stepFish}}
+\index{stepFish@{stepFish}!simulation.go@{simulation.go}}
+\doxysubsubsection{\texorpdfstring{stepFish()}{stepFish()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} step\+Fish (\begin{DoxyParamCaption}\item[{current $\ast$}]{World,  }\item[{next $\ast$}]{World,  }\item[{row}]{,  }\item[{col int}]{,  }\item[{cfg}]{Config,  }\item[{rnd $\ast$rand.}]{Rand }\end{DoxyParamCaption})}
+
+
+
+Definition at line 136 of file simulation.\+go.
+
+\mbox{\Hypertarget{simulation_8go_a865799a55f8f7af7f57de507ea7c4b34}\label{simulation_8go_a865799a55f8f7af7f57de507ea7c4b34}} 
+\index{simulation.go@{simulation.go}!stepShark@{stepShark}}
+\index{stepShark@{stepShark}!simulation.go@{simulation.go}}
+\doxysubsubsection{\texorpdfstring{stepShark()}{stepShark()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} step\+Shark (\begin{DoxyParamCaption}\item[{current $\ast$}]{World,  }\item[{next $\ast$}]{World,  }\item[{row}]{,  }\item[{col int}]{,  }\item[{cfg}]{Config,  }\item[{rnd $\ast$rand.}]{Rand }\end{DoxyParamCaption})}
+
+
+
+Definition at line 179 of file simulation.\+go.
+
+\mbox{\Hypertarget{simulation_8go_a6e2efff14b30ac2e13fdf9315b6f302f}\label{simulation_8go_a6e2efff14b30ac2e13fdf9315b6f302f}} 
+\index{simulation.go@{simulation.go}!StepWorld@{StepWorld}}
+\index{StepWorld@{StepWorld}!simulation.go@{simulation.go}}
+\doxysubsubsection{\texorpdfstring{StepWorld()}{StepWorld()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} Step\+World (\begin{DoxyParamCaption}\item[{w $\ast$}]{World,  }\item[{cfg}]{Config,  }\item[{rnd $\ast$rand.}]{Rand }\end{DoxyParamCaption})}
+
+
+
+Definition at line 107 of file simulation.\+go.
+

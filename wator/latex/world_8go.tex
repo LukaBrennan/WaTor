@@ -1,0 +1,50 @@
+\hypertarget{world_8go}{}\doxysection{world.\+go File Reference}
+\label{world_8go}\index{world.go@{world.go}}
+
+
+Defines the World structure and grid operations for the Wa-\/\+Tor simulation The World contains\+: A 2D toroidal grid of Cells Simulation parameters from Config Helper functions for movement and neighbor retrieval.  
+
+
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} \mbox{\hyperlink{world_8go_ae9fa27f4b2cf4f6655247687e93ab604}{New\+World}} (cfg Config) $\ast$World
+\begin{DoxyCompactList}\small\item\em Creates an empty world of given size using configuration parameters Creating a square gird of size x size. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} (w $\ast$World) wrap(i int) int
+\begin{DoxyCompactList}\small\item\em Wraps a grid index so the world moves in a cycle, no out of bounds, instead returning the entity back to the first row or column depending on where they moved. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Defines the World structure and grid operations for the Wa-\/\+Tor simulation The World contains\+: A 2D toroidal grid of Cells Simulation parameters from Config Helper functions for movement and neighbor retrieval. 
+
+
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}\label{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}} 
+\index{world.go@{world.go}!func@{func}}
+\index{func@{func}!world.go@{world.go}}
+\doxysubsubsection{\texorpdfstring{func()}{func()}}
+{\footnotesize\ttfamily func (\begin{DoxyParamCaption}\item[{w $\ast$}]{World }\end{DoxyParamCaption})}
+
+
+
+Wraps a grid index so the world moves in a cycle, no out of bounds, instead returning the entity back to the first row or column depending on where they moved. 
+
+Returns the indices of the 4 neighboring cells. 
+
+Definition at line 50 of file world.\+go.
+
+\mbox{\Hypertarget{world_8go_ae9fa27f4b2cf4f6655247687e93ab604}\label{world_8go_ae9fa27f4b2cf4f6655247687e93ab604}} 
+\index{world.go@{world.go}!NewWorld@{NewWorld}}
+\index{NewWorld@{NewWorld}!world.go@{world.go}}
+\doxysubsubsection{\texorpdfstring{NewWorld()}{NewWorld()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{world_8go_a5e3366bd051981d6f6ffff4a2abb5c7e}{func}} New\+World (\begin{DoxyParamCaption}\item[{cfg}]{Config }\end{DoxyParamCaption})}
+
+
+
+Creates an empty world of given size using configuration parameters Creating a square gird of size x size. 
+
+
+
+Definition at line 31 of file world.\+go.
+

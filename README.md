@@ -31,7 +31,17 @@ The world is simulated as a **toroidal grid** populated by fish and sharks.
   **Multithreading with goroutines**
   **Benchmark mode** with CSV export
   Parallel **speedup analysis (1–8 threads)**
-  ully documented with **Doxygen-compatible comments**
+  fully documented with **Doxygen-compatible comments**
+
+---
+
+**   Viewing the Doxygen Documentation
+
+The full Doxygen-generated documentation is included inside the html/ folder of this repository.
+To view the documentation:
+Open the html/ folder in the repository.
+Locate the file named index.html.
+Click "View Raw" → your browser will automatically open and display the full Doxygen site.
 
 ---
 
